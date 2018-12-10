@@ -1,0 +1,59 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "More informations contact Helio Nogueira <helio.nogueira@kroton.com.br>.",
+    "Parameters": {
+        "EnvironmentTag": {
+            "Type": "String",
+            "MinLength": "3",
+            "MaxLength": "10",
+            "Description": "Some Sufix TAG for AWS S3 Bucket",
+            "AllowedPattern": "^[a-zA-Z]+$"
+        }
+    },
+    "Mappings": {
+        "Environment": {
+            "Constant": {
+                "ProductName": "basic-aws-cloudformation-athena"
+            }
+        }
+    },
+    "Resources": {
+        "S3Bucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+                "BucketName": {
+                    "Fn::Join": ["-", [{
+                        "Fn::FindInMap": ["Environment", "Constant", "ProductName"]
+                    }, {
+                        "Ref": "EnvironmentTag"
+                    }]]
+                },
+                "AccessControl": "Private",
+                "AccelerateConfiguration": {
+                    "AccelerationStatus": "Enabled"
+                },
+                "VersioningConfiguration": {
+                    "Status": "Enabled"
+                }
+            }
+        },
+        "AthenaNamedQuery": {
+            "Type": "AWS::Athena::NamedQuery",
+            "DependsOn": ["S3Bucket"],
+            "Properties": {
+                "Database": "default",
+                "Name": "CreateUsersTable",
+                "Description": "Create a Users Table",
+                "QueryString": "CREATE EXTERNAL TABLE IF NOT EXISTS users ( `id` bigint, `username` string, `profile` string, `firtname` string, `lastname` string, `birthday` date, `genre` string, `created` timestamp, `modified` timestamp ) ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe' LOCATION 's3://basic-aws-cloudformation-athena-dev/users/';"
+            }
+        }
+    },
+    "Outputs": {
+        "S3BucketName": {
+            "Description": "S3 Bucket Name",
+            "Value": {
+                "Ref": "S3Bucket"
+            }
+        }
+    }
+}
